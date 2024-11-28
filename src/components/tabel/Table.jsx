@@ -1,19 +1,20 @@
-import * as React from "react";
-import PropTypes from "prop-types";
-import Box from "@mui/material/Box";
-import Table from "@mui/material/Table";
-import TableBody from "@mui/material/TableBody";
-import TableCell from "@mui/material/TableCell";
-import TableContainer from "@mui/material/TableContainer";
-import TablePagination from "@mui/material/TablePagination";
-import TableRow from "@mui/material/TableRow";
-import Paper from "@mui/material/Paper";
-import FormControlLabel from "@mui/material/FormControlLabel";
-import Switch from "@mui/material/Switch";
-import EnhancedTableHead from "./components/TableHeader";
-import { Delete, Visibility, Edit, Print } from "@mui/icons-material/";
-import { IconButton } from "@mui/material";
-import TableRowsLoader from "./components/TableSkeletonLoader";
+import * as React from 'react';
+import PropTypes from 'prop-types';
+import Box from '@mui/material/Box';
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableContainer from '@mui/material/TableContainer';
+import TablePagination from '@mui/material/TablePagination';
+import TableRow from '@mui/material/TableRow';
+import Paper from '@mui/material/Paper';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import Switch from '@mui/material/Switch';
+import EnhancedTableHead from './components/TableHeader';
+import { Delete, Visibility, Edit, Print } from '@mui/icons-material/';
+import { IconButton } from '@mui/material';
+import TableRowsLoader from './components/TableSkeletonLoader';
+import { useEffect } from 'react';
 
 function descendingComparator(a, b, orderBy) {
   if (b[orderBy] < a[orderBy]) {
@@ -25,13 +26,13 @@ function descendingComparator(a, b, orderBy) {
   return 0;
 }
 
-function getComparator(order, orderBy) {
-  return order === "desc"
+export function getComparator(order, orderBy) {
+  return order === 'desc'
     ? (a, b) => descendingComparator(a, b, orderBy)
     : (a, b) => -descendingComparator(a, b, orderBy);
 }
 
-function stableSort(array, comparator) {
+export function stableSort(array, comparator) {
   const stabilizedThis = array.map((el, index) => [el, index]);
   stabilizedThis.sort((a, b) => {
     const order = comparator(a[0], b[0]);
@@ -58,6 +59,7 @@ export default function EnhancedTable({
   setPageNumber,
   setDocumentPerPage,
   rowsCount,
+  getRows = () => {},
 }) {
   const [order, setOrder] = React.useState();
   const [orderBy, setOrderBy] = React.useState();
@@ -69,16 +71,28 @@ export default function EnhancedTable({
   }
 
   const handleRequestSort = (event, property) => {
-    const isAsc = orderBy === property && order === "asc";
-    setOrder(isAsc ? "desc" : "asc");
+    const isAsc = orderBy === property && order === 'asc';
+    setOrder(isAsc ? 'desc' : 'asc');
     setOrderBy(property);
+    const slicedRows = stableSort(rows, getComparator(order, orderBy)).slice(
+      page * rowsPerPage,
+      page * rowsPerPage + rowsPerPage
+    );
+    getRows(slicedRows);
   };
 
   const handleChangePage = (event, newPage) => {
     if (pageNumber !== undefined && documentPerPage !== undefined) {
       setPageNumber(newPage);
       setPage(newPage);
-    } else setPage(newPage);
+    } else {
+      setPage(newPage);
+    }
+    const slicedRows = stableSort(rows, getComparator(order, orderBy)).slice(
+      page * rowsPerPage,
+      page * rowsPerPage + rowsPerPage
+    );
+    getRows(slicedRows);
   };
 
   const handleChangeRowsPerPage = (event) => {
@@ -91,6 +105,12 @@ export default function EnhancedTable({
       setRowsPerPage(parseInt(event.target.value, 10));
       setPage(0);
     }
+    const newRowsPerPage = parseInt(event.target.value, 10);
+    const slicedRows = stableSort(rows, getComparator(order, orderBy)).slice(
+      page * newRowsPerPage,
+      page * newRowsPerPage + newRowsPerPage
+    );
+    getRows(slicedRows);
   };
 
   const handleChangeDense = (event) => {
@@ -109,11 +129,22 @@ export default function EnhancedTable({
     [order, orderBy, page, rowsPerPage, rows]
   );
 
+  useEffect(() => {
+    const slicedRows = stableSort(rows, getComparator(order, orderBy)).slice(
+      page * rowsPerPage,
+      page * rowsPerPage + rowsPerPage
+    );
+    getRows(slicedRows);
+  });
+
   return (
     <Box className={className}>
-      <Paper sx={{ width: "100%", mb: 2 }}>
+      <Paper sx={{ width: '100%', mb: 2 }}>
         <TableContainer>
-          <Table aria-labelledby="tableTitle" size={dense ? "small" : "medium"}>
+          <Table
+            aria-labelledby='tableTitle'
+            size={dense ? 'small' : 'medium'}
+          >
             <EnhancedTableHead
               headCells={headCells}
               order={order}
@@ -135,65 +166,65 @@ export default function EnhancedTable({
                   return (
                     <TableRow
                       hover
-                      role="checkbox"
+                      role='checkbox'
                       tabIndex={-1}
                       key={row.id || index}
-                      sx={{ cursor: "pointer" }}
+                      sx={{ cursor: 'pointer' }}
                     >
                       {headCells.map((cell) => (
                         <TableCell
                           key={cell.id}
-                          component="th"
+                          component='th'
                           id={labelId}
-                          scope="row"
-                          align={cell.numeric ? "right" : "left"}
+                          scope='row'
+                          align={cell.numeric ? 'right' : 'left'}
                         >
                           {row[cell.id]}
                         </TableCell>
                       ))}
 
-                      {toolbar.includes("View") && (
+                      {toolbar.includes('View') && (
                         <TableCell>
                           <IconButton
                             onClick={() => onView(row.id)}
-                            aria-label="add to shopping cart"
-                            className="text-white bg-[#3B81F6] hover:text-[#3B81F6] hover:bg-white"
+                            aria-label='add to shopping cart'
+                            className='text-white bg-[#3B81F6] hover:text-[#3B81F6] hover:bg-white'
                           >
                             <Visibility />
                           </IconButton>
                         </TableCell>
                       )}
-                      {toolbar.includes("Edit") && (
+                      {toolbar.includes('Edit') && (
                         <TableCell>
                           <IconButton
                             onClick={() => onEdit(row.id)}
-                            color="primary"
-                            aria-label="add to shopping cart"
-                            className="text-white bg-[#21C55D] hover:text-[#21C55D] hover:bg-white"
+                            color='primary'
+                            aria-label='add to shopping cart'
+                            className='text-white bg-[#21C55D] hover:text-[#21C55D] hover:bg-white'
                           >
                             <Edit />
                           </IconButton>
                         </TableCell>
                       )}
-                      {toolbar.includes("Delete") && (
+                      {toolbar.includes('Delete') && (
                         <TableCell>
                           <IconButton
                             onClick={() => onDelete(row.id)}
-                            color="primary"
-                            aria-label="add to shopping cart"
-                            className="text-white bg-[#F59E0B] hover:text-[#F59E0B] hover:bg-white"
+                            color='primary'
+                            aria-label='add to shopping cart'
+                            className='text-white bg-[#F59E0B] hover:text-[#F59E0B] hover:bg-white'
                           >
                             <Delete />
                           </IconButton>
                         </TableCell>
                       )}
-                      {toolbar.includes("Print") && (
+                      {toolbar.includes('Print') && (
                         <TableCell>
                           <IconButton
                             onClick={() => onPrint(row.id)}
-                            color="primary"
-                            aria-label="add to shopping cart"
-                            className="text-white bg-[#21C55D] hover:text-[#21C55D] hover:bg-white"
+                            color='primary'
+                            aria-label='add to shopping cart'
+                            className='text-white bg-[#21C55D] hover:text-[#21C55D] hover:bg-white'
                           >
                             <Print />
                           </IconButton>
@@ -217,7 +248,7 @@ export default function EnhancedTable({
         </TableContainer>
         <TablePagination
           rowsPerPageOptions={[5, 10, 25]}
-          component="div"
+          component='div'
           count={rows?.length}
           rowsPerPage={rowsPerPage}
           page={page}
@@ -226,8 +257,13 @@ export default function EnhancedTable({
         />
       </Paper>
       <FormControlLabel
-        control={<Switch checked={dense} onChange={handleChangeDense} />}
-        label="Dense padding"
+        control={
+          <Switch
+            checked={dense}
+            onChange={handleChangeDense}
+          />
+        }
+        label='Dense padding'
       />
     </Box>
   );
@@ -243,4 +279,10 @@ EnhancedTable.propTypes = {
   toolbar: PropTypes.array,
   headCells: PropTypes.array.isRequired,
   rows: PropTypes.array.isRequired,
+  pageNumber: PropTypes.number,
+  documentPerPage: PropTypes.number,
+  setPageNumber: PropTypes.func,
+  setDocumentPerPage: PropTypes.func,
+  rowsCount: PropTypes.number,
+  getRows: PropTypes.func,
 };

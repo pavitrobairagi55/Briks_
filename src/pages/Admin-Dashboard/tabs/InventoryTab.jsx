@@ -1,79 +1,241 @@
-import { Box } from "@mui/material";
-import DashboardCard from "../../../components/cards/dashboardCard/dashboardCard";
-import SimpleCharts from "../../../components/charts/chart";
+import { Box, Card, CardContent, Typography } from '@mui/material';
+import DashboardCard from '../../../components/cards/dashboardCard/dashboardCard';
+import { AuthContext } from '../../../shared/authContext';
+import { Pie } from 'react-chartjs-2';
+import ChartDataLabels from 'chartjs-plugin-datalabels';
+import { Chart as ChartJS, Tooltip, Legend, ArcElement } from 'chart.js';
+import { useContext, useEffect, useState } from 'react';
+import { fetchInventoryData } from './dashboardFunctions';
 
-import Modal from "../../../components/Modal";
-import { useState } from "react";
-import useFetch from "../../../shared/useFetch";
-import PieStats from "../../../components/stats/PieStats";
+ChartJS.register(ArcElement, Tooltip, Legend, ChartDataLabels);
+
 export default function InventoryTab() {
-  const { data } = useFetch("DashBoard/inventory");
+  const [data, setData] = useState({});
+  const auth = useContext(AuthContext);
 
-  const mortarData = [
-    {
-      id: 0,
-      value: data?.mortar?.freeQuantity,
-      label: `Free Quantity ( ${data?.mortar?.freeQuantity}) `,
+  const mortalFreeQuantityPercentage =
+    data?.mortar?.freeQuantity / (data?.mortar?.capacity / 100);
+  const mortalTotalCapacity = 100 - mortalFreeQuantityPercentage;
+
+  const morData = {
+    labels: [
+      `Free Quantity (${data?.mortar?.freeQuantity.toFixed()})`,
+      `Capacity (${data?.mortar?.capacity.toFixed()})`,
+      `Free Quantity Percentage (${Math.round(mortalFreeQuantityPercentage)}%)`,
+    ],
+    data: [
+      Math.round(mortalFreeQuantityPercentage) ?? 0,
+      Math.round(mortalTotalCapacity) ?? 0,
+      0,
+    ],
+  };
+
+  const palFreeQuantityPercentage =
+    data?.plaster?.freeQuantity / (data?.plaster?.capacity / 100);
+  const palTotalCapacity = 100 - palFreeQuantityPercentage;
+
+  const plaData = {
+    labels: [
+      `Free Quantity (${data?.plaster?.freeQuantity.toFixed()})`,
+      `Capacity (${data?.plaster?.capacity.toFixed()})`,
+      `Free Quantity Percentage (${Math.round(palFreeQuantityPercentage)}%)`,
+    ],
+    data: [
+      Math.round(palFreeQuantityPercentage) ?? 0,
+      Math.round(palTotalCapacity) ?? 0,
+      0,
+    ],
+  };
+
+  const dataForMortar = {
+    labels: morData.labels ?? [], // x-axis labels
+    datasets: [
+      {
+        label: '',
+        data: morData.data ?? [], // y-axis values
+        backgroundColor: ['#02B2AF', '#6666ff', '#99cc00'],
+        hoverOffset: 4,
+        borderColor: [
+          'rgba(255, 99, 132, 1)',
+          'rgba(54, 162, 235, 1)',
+          'rgb(0, 51, 102)',
+        ],
+        borderWidth: 1,
+      },
+    ],
+  };
+
+  const optionsForMortar = {
+    responsive: true,
+    plugins: {
+      legend: {
+        display: true,
+        position: 'top',
+      },
+      title: {
+        display: false,
+        text: 'Mortar',
+      },
+      tooltip: {
+        callbacks: {
+          label: function (context) {
+            // Return only the label (e.g., dataset label)
+            return context.dataset.label || '';
+          },
+        },
+      },
+      datalabels: {
+        display: false, // Disable data labels
+      },
     },
-    {
-      id: 1,
-      value: data?.mortar?.capacity,
-      label: `Capacity ( ${data?.mortar?.capacity}) `,
+  };
+
+  const dataForPlaster = {
+    labels: plaData.labels ?? [], // x-axis labels
+    datasets: [
+      {
+        label: '',
+        data: plaData.data ?? [], // y-axis values
+        backgroundColor: ['#02B2AF', '#6666ff', '#99cc00'],
+        hoverOffset: 4,
+        borderColor: [
+          'rgba(255, 99, 132, 1)',
+          'rgba(54, 162, 235, 1)',
+          'rgb(0, 51, 102)',
+        ],
+        borderWidth: 1,
+      },
+    ],
+  };
+
+  const optionsForPlaster = {
+    responsive: true,
+    plugins: {
+      legend: {
+        display: true,
+        position: 'top',
+      },
+      title: {
+        display: false,
+        text: 'Mortar',
+      },
+      tooltip: {
+        callbacks: {
+          label: function (context) {
+            // Return only the label (e.g., dataset label)
+            return context.dataset.label || '';
+          },
+        },
+      },
+      datalabels: {
+        display: false, // Disable data labels
+      },
     },
-  ];
-  const plasterData = [
-    {
-      id: 0,
-      value: data?.plaster?.freeQuantity,
-      label: `Free Quantity ( ${data?.plaster?.freeQuantity} )`,
-    },
-    {
-      id: 1,
-      value: data?.plaster?.capacity,
-      label: `Capacity ( ${data?.plaster?.capacity} )`,
-    },
-  ];
+  };
+
+  useEffect(() => {
+    fetchInventoryData(setData, auth);
+  }, [auth]);
+
+  console.log(data);
+
   return (
     <>
-      <Box className="mb-6">
-        <h1 className="mb-4">Athel</h1>
-        <DashboardCard title="Total Quantity" value={`${data?.athel} LM`} />
+      <Box sx={{ display: 'flex', alignItems: 'center', height: '250px' }}>
+        <Box sx={{ marginRight: 2 }}>
+          <Typography
+            variant='subtitle1'
+            gutterBottom
+          >
+            Athel
+          </Typography>
+          <DashboardCard
+            title='Total Quantity'
+            value={`${data?.athel} LM`}
+          />
+        </Box>
+        <Box>
+          <Typography
+            variant='subtitle1'
+            gutterBottom
+          >
+            Straw
+          </Typography>
+          <DashboardCard
+            title='Total Quantity'
+            value={`${data?.straw} Kilograms`}
+          />
+        </Box>
       </Box>
-      <Box className="mb-6">
-        <h1 className="mb-6">Straw</h1>
-        <DashboardCard
-          title="Total Quantity"
-          value={`${data?.straw} Kilograms`}
-        />
+      <Box sx={{ display: 'flex', alignItems: 'center', height: '450px' }}>
+        <Box>
+          <Typography
+            sx={{ pl: 2 }}
+            variant='subtitle1'
+            gutterBottom
+          >
+            Mortar
+          </Typography>
+          <Box sx={{ p: 2 }}>
+            <Card sx={{ width: '400px', height: '400px', padding: '10px' }}>
+              <CardContent>
+                <Pie
+                  data={dataForMortar}
+                  options={optionsForMortar}
+                />
+              </CardContent>
+            </Card>
+          </Box>
+        </Box>
+        <Box>
+          <Typography
+            sx={{ pl: 2 }}
+            variant='subtitle1'
+            gutterBottom
+          >
+            Plaster
+          </Typography>
+          <Box sx={{ p: 2 }}>
+            <Card sx={{ width: '400px', height: '400px', padding: '10px' }}>
+              <CardContent>
+                <Pie
+                  data={dataForPlaster}
+                  options={optionsForPlaster}
+                />
+              </CardContent>
+            </Card>
+          </Box>
+        </Box>
       </Box>
-      <Box className="mb-6">
-        <h1 className="mb-4">Mortar</h1>
-        <PieStats data={mortarData} width={600} height={300} />
-      </Box>
-      <Box className="mb-6">
-        <h1 className="mb-4">Plaster</h1>
-        <PieStats data={plasterData} width={600} height={300} />
-      </Box>
-      <Box className="mb-6">
-        <h1 className="mb-4">Red Clay</h1>
+
+      <Box sx={{ mt: 2 }}>
+        <Typography
+          sx={{ pl: 2 }}
+          variant='subtitle1'
+          gutterBottom
+        >
+          Red Clay
+        </Typography>
         <Box
           sx={{
-            display: "flex",
-            flexWrap: "wrap",
-            justifyContent: "center",
-            gap: "20px",
-            padding: "30px 10px",
-            width: "100%",
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            gap: '20px',
+            p: 2,
           }}
         >
           <DashboardCard
-            title="redClay UnCrushed"
+            title='redClay UnCrushed'
             value={data?.redClayUnCrushed}
           />
-          <DashboardCard title="redClay Crushed" value={data?.redClayCrushed} />
           <DashboardCard
-            title="TotalQuantity"
-            value={data?.redClayUnCrushed + data?.redClayCrushed + " M3"}
+            title='redClay Crushed'
+            value={data?.redClayCrushed}
+          />
+          <DashboardCard
+            title='TotalQuantity'
+            value={data?.redClayUnCrushed + data?.redClayCrushed + ' M3'}
           />
         </Box>
       </Box>

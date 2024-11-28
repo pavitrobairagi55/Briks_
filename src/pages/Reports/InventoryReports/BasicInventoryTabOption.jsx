@@ -123,6 +123,8 @@ export default function BasicInventoryTabOption() {
       label: "Product Wise Total",
     },
   ];
+
+  
   return (
     <>
       <HeaderFilter

@@ -1,19 +1,42 @@
-import { Box } from "@mui/material";
-import EnhancedTable from "../../../components/tabel/Table";
-import DashboardCard from "../../../components/cards/dashboardCard/dashboardCard";
-import SimpleCharts from "../../../components/charts/chart";
-import GroupIcon from "@mui/icons-material/Group";
-import VisibilityIcon from "@mui/icons-material/Visibility";
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
-import Modal from "../../../components/Modal";
-import { useState } from "react";
-import useFetch from "../../../shared/useFetch";
-export default function AlQasabTab() {
-  const [isModalOpen, setIsModalOpen] = useState();
-  const { data } = useFetch("DashBoard/al-qasab");
+import { Box, CardContent, TableContainer } from '@mui/material';
+// import EnhancedTable from '../../../components/tabel/Table';
+import DashboardCard from '../../../components/cards/dashboardCard/dashboardCard';
+import GroupIcon from '@mui/icons-material/Group';
+import useFetch from '../../../shared/useFetch';
+import Card from '@mui/material/Card';
+import { Bar } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+} from 'chart.js';
+import { useEffect, useState } from 'react';
+import { sliceTable, sortArrOfObj } from '../../../utils/utils';
+import CustomTableHeader from '../../../components/Table/TableHeader';
+import CustomTableBody from '../../../components/Table/TableBody';
+import { AlQasabCols } from './dashboardConstants';
+import CustomPagination from '../../../components/Table/CustomPagination';
 
-  const rows = data?.soilStorage?.map((elem) => {
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend
+);
+export default function AlQasabTab() {
+  let { data } = useFetch('DashBoard/al-qasab');
+  data = data?.soilStorage ?? [];
+  const [tableRows, setTableRows] = useState([]);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
+
+  const rows = data?.map((elem) => {
     return {
       ZoneName: elem.zoneName,
       Quantity: elem.quantity,
@@ -22,53 +45,75 @@ export default function AlQasabTab() {
     };
   });
 
-  const headCells = [
-    {
-      id: "ZoneName",
-      numeric: false,
-      disablePadding: true,
-      label: "ZoneName",
-    },
-    {
-      id: "Quantity",
-      numeric: true,
-      disablePadding: false,
-      label: "Quantity",
-    },
-    {
-      id: "Capacity",
-      numeric: true,
-      disablePadding: false,
-      label: "Capacity",
-    },
-    {
-      id: "CapacityPercentage",
-      numeric: true,
-      disablePadding: false,
-      label: "Capacity Percentage",
-    },
-  ];
+  const sortData = (sortVal) => {
+    const sortedData = sortArrOfObj([...rows], sortVal);
+    const slicedData = sliceTable(sortedData, page, rowsPerPage) ?? [];
+    setTableRows(slicedData);
+  };
 
-  const labels = data?.soilStorage?.map((elem) => elem.zoneName);
-  const labelsData = data?.soilStorage?.map((elem) => elem.capacity);
+  useEffect(() => {
+    const slicedData = sliceTable(rows, page, rowsPerPage) ?? [];
+    setTableRows(slicedData);
+  }, [data, page, rowsPerPage]);
+
+  const dataForChart = {
+    labels: tableRows?.map((elem) => elem.ZoneName) ?? [], // x-axis labels
+    datasets: [
+      {
+        label: '',
+        data: tableRows.map((elem) => elem.Capacity) ?? [], // y-axis values
+        backgroundColor: '#02B2AF',
+        borderColor: 'rgba(75, 192, 192, 1)',
+        borderWidth: 1,
+      },
+    ],
+  };
+
+  const options = {
+    responsive: true,
+    plugins: {
+      legend: {
+        display: false,
+        position: 'top',
+      },
+      title: {
+        display: false,
+        text: 'Zonewise Capacity',
+      },
+      datalabels: {
+        display: false, // Disable data labels
+      },
+    },
+    scales: {
+      y: {
+        min: 0,
+        max: Math.max(data?.map((elem) => elem.capacity)),
+        ticks: {
+          stepSize: Math.ceil(
+            Math.max(data?.map((elem) => elem.capacity)) / 10
+          ),
+        },
+      },
+    },
+  };
 
   return (
-    <Box className="flex flex-col gap-y-10">
+    <Box className='flex flex-col gap-y-10'>
       <Box className>
-        <h1 className="mb2">Al Qasab</h1>
-        <Box className="flex justify-center gap-x-10">
+        <h1 className='mb2'>Al Qasab</h1>
+        <Box className='flex justify-center gap-x-10'>
           <DashboardCard
-            title="Soli Production Area"
+            title='Soli Production Area'
             value={data?.alQasabSotrage?.productionArea}
             icon={<GroupIcon />}
           />
           <DashboardCard
-            title="Storage"
+            title='Storage'
             value={data?.alQasabSotrage?.storage}
             icon={<GroupIcon />}
           />
           <DashboardCard
-            title="Total"
+            title='Total'
             value={
               data?.alQasabSotrage?.productionArea +
               data?.alQasabSotrage?.storage
@@ -77,31 +122,62 @@ export default function AlQasabTab() {
           />
         </Box>
 
-        <h1 className="mb2">Soil Intransite</h1>
-        <Box className="flex justify-center gap-x-10">
+        <h1 className='mb2'>Soil Intransite</h1>
+        <Box className='flex justify-center gap-x-10'>
           <DashboardCard
-            title="Gate Out"
+            title='Gate Out'
             value={data?.soilTransportToJubail?.gateOut}
             icon={<GroupIcon />}
           />
           <DashboardCard
-            title="Reached Al Jubaila"
+            title='Reached Al Jubaila'
             value={data?.soilTransportToJubail?.reachedJubila}
             icon={<GroupIcon />}
           />
           <DashboardCard
-            title="In Transit"
+            title='In Transit'
             value={data?.soilTransportToJubail?.intransit}
             icon={<GroupIcon />}
           />
         </Box>
       </Box>
-      <SimpleCharts
-        className="h-96 max-h-96"
-        labels={labels?.length ? labels : [" "]}
-        data={labelsData?.length ? labelsData : [" "]}
-      />
-      <EnhancedTable headCells={headCells} rows={rows || []} />,
+
+      <Box>
+        <Card>
+          <TableContainer sx={{ width: '100%' }}>
+            <CustomTableHeader
+              columns={AlQasabCols}
+              onSortClick={sortData}
+            />
+            <CustomTableBody
+              data={tableRows}
+              columns={AlQasabCols}
+            />
+            <CustomPagination
+              totalCount={rows.length ?? 0}
+              rowsPerPage={rowsPerPage}
+              setRowsPerPage={setRowsPerPage}
+              currentPage={page}
+              setCurrentPage={setPage}
+            />
+          </TableContainer>
+        </Card>
+
+        <Card
+          sx={{
+            minWidth: 275,
+            p: 1,
+            mt: 2,
+          }}
+        >
+          <CardContent>
+            <Bar
+              data={dataForChart}
+              options={options}
+            />
+          </CardContent>
+        </Card>
+      </Box>
     </Box>
   );
 }

@@ -63,7 +63,7 @@ export async function handlePrint(url, filename, auth) {
         Authorization: `Bearer ${auth.token}`,
       },
     });
-
+    
     const href = URL.createObjectURL(response.data);
 
     const link = document.createElement("a");
@@ -124,7 +124,6 @@ export function extractTimeFromDate(dateString) {
   if (minutes.toString().length === 1) {
     minutes = `${minutes}0`;
   }
-  const seconds = dateTime.getSeconds();
 
   // Formatting time string
   const formattedTime = `${hours}:${minutes}`;
@@ -151,4 +150,32 @@ export async function uploadFileUrl(file, auth) {
     },
   });
   return response.data.path;
+}
+
+export function getParts(value) {
+  const parts = [0];
+  const increment = value / 10;
+
+  for (let i = increment; i <= value; i += increment) {
+    parts.push(i);
+  }
+  return parts;
+}
+
+export function roundUpToBucket(value) {
+  // Define the cutoff points
+  const buckets = [100, 500, 1000, 5000, 10000, 50000, 100000, 1000000, 5000000, 10000000];
+  
+  // If value is below the smallest bucket, return that bucket
+  if (value <= buckets[0]) return buckets[0];
+  
+  // Loop through each bucket
+  for (let i = 1; i < buckets.length; i++) {
+    if (value <= buckets[i]) return buckets[i];
+  }
+  let bucket = buckets[buckets.length - 1];
+  while (value > bucket) {
+    bucket *= 10;
+  }
+  return bucket
 }

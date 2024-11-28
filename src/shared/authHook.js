@@ -8,7 +8,7 @@ export const useAuth = () => {
   const [token, setToken] = useState(null);
   const [refreshToken, setRefreshToken] = useState(null);
   const [userId, setUserId] = useState(null);
-  const [isRefreshModalOpen, setIsRefreshModalOpen] = useState(false);
+  const [isRefreshModalOpen, setIsRefreshModalOpen] = useState(true);
   const [userData, setUserData] = useState(null);
   const [navItems, setNavItems] = useState([]);
   const [role, setRole] = useState([]);
@@ -38,7 +38,7 @@ export const useAuth = () => {
     if (!fromLogin) {
       refreshModalTimer = setTimeout(
         () => setIsRefreshModalOpen(true),
-        remainingTime - 60 * 1000
+        remainingTime - 5 * 1000
       );
     }
     localStorage.setItem("token", token);
@@ -89,6 +89,7 @@ export const useAuth = () => {
     localStorage.setItem("userData", JSON.stringify(user));
     window.location.reload();
   };
+
   const logout = useCallback(() => {
     setToken(null);
     setUserId(null);
