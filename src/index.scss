@@ -1,0 +1,145 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* width */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 5px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background: #a6a6a6;
+  border-radius: 10px;
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+
+.main{
+  .side-bar{
+    width:300px;
+  }
+}
+
+.form-control{
+  width: 350px
+}
+@media screen and (min-width: 991px){
+  .hide-web{
+    display: none;
+  }
+  .main{
+    .side-content{
+      width:calc(100% - 300px)
+    }
+    &.closed-side-bar{
+      .side-bar{
+        width:90px;
+        .nav-btn{
+          display: flex;
+          justify-content: center;
+        }
+        span{
+          display: none;
+        }
+      }
+      .side-content{
+        width:calc(100% - 90px)
+      }
+      .hide-close{
+        display: none;
+      }
+      .logo{
+        width: 50px;
+        height: 50px;
+      }
+    }
+  }
+}
+@media screen and (max-width: 991px){
+  .MuiTabs-flexContainer{
+    margin-bottom: 5px;
+    .Mui-selected {
+      color: #DCC3B8 !important;
+      border-bottom: 5px solid #DCC3B8;
+      transition: all 250ms;
+    }
+  }
+
+  .MuiTabs-indicator{
+    display: none;
+  }
+  .modal-body{
+    width: 100%;
+  }
+  .filter-button{
+    width: auto !important;
+    margin-bottom: 15px;
+  }
+  .tabs-content{
+    padding: 24px 10px;
+  }
+  .form-control{
+    width: 100%
+  }
+  .side-bar{
+    transform: translateX(-300px);
+    transition: all 250ms;
+    z-index: 99;
+    height: 100vh;
+    position: fixed;
+  }
+  .main{
+    .side-content{
+      width:100%;
+    }
+    &.closed-side-bar{
+      .side-bar{
+      }
+      .side-content{
+        width:100%;
+      }
+    }
+    &.open-side-bar{
+      .side-bar{
+        transform: translateX(0);
+        transition: all 250ms;
+      }
+    }
+  }
+  .hide-mob{
+    display: none;
+  }
+  .scroll-tab-mob{
+    .MuiTabs-flexContainer{
+      max-width: 100vw;
+      overflow-x: auto;
+    }
+  }
+  .MuiTableCell-root.MuiTableCell-head{
+    min-width: 150px;
+    span{
+      text-align: left;
+    }
+  }
+  .MuiTablePagination-toolbar{
+    padding: 0 2px;
+  }
+  .MuiTablePagination-actions{
+    margin-left: 0 !important;
+  }
+}
+.inventory-card > div{
+  width: 100% !important;
+}

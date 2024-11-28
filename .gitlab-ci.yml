@@ -1,0 +1,224 @@
+variables:
+  DOCKER_IMAGE_PRODUCTION: $CI_REGISTRY_IMAGE
+  DOCKER_IMAGE_TEST: $CI_REGISTRY_IMAGE
+  DOCKER_IMAGE_DEV: $CI_REGISTRY_IMAGE
+
+stages:
+  - build_dev
+  - push_registry_dev
+  - update_manifests_dev
+  - build_stage
+  - push_registry_stage
+  - update_manifests_stage
+  - build_prod
+  - push_registry_prod
+  - update_manifests_prod
+
+build_react_dev:
+  image: node:18
+  stage: build_dev
+  variables:
+    CI: "false"
+  script:
+    - npm install
+    - cat .env.dev> .env
+    - npm run build
+
+  artifacts:
+    paths:
+      - dist/
+  only:
+    - develop
+  tags:
+    - gitlab-org-docker
+
+build_image_dev:
+  stage: push_registry_dev
+  image: docker:24.0.6
+  services:
+    - docker:24.0.6-dind
+  variables:
+    DOCKER_HOST: tcp://docker:2375/
+    DOCKER_DRIVER: overlay2
+    DOCKER_TLS_CERTDIR: ""
+  before_script:
+    - echo -n $CI_JOB_TOKEN | docker login -u gitlab-ci-token --password-stdin $CI_REGISTRY
+  script:
+    # - cat .env.dev > .env
+    - docker build  -f dev.Dockerfile --tag $DOCKER_IMAGE_TEST:$CI_COMMIT_SHORT_SHA-dev .
+    - docker push $DOCKER_IMAGE_TEST:$CI_COMMIT_SHORT_SHA-dev
+
+  only:
+    - develop
+  tags:
+    - gitlab-org-docker
+
+update_manifest_dev:
+  stage: update_manifests_dev
+  variables:
+    GIT_STRATEGY: none
+  retry: 2
+  image: docker
+  services:
+    - docker:24.0.6-dind
+  script:
+    # Add SSH key to root
+    - mkdir -p /root/.ssh
+    - cat "${GIT_SSH}" > /root/.ssh/id_rsa
+    - ssh-keyscan -H gitlab.com > /root/.ssh/known_hosts
+    - chmod 400 /root/.ssh/id_rsa
+    - apk add --no-cache git
+    - export GIT_SSH_COMMAND="ssh -i ~/.ssh/id_rsa"
+    - git config --global user.name "hatemBT"
+    - git config --global user.email "hatemtayeb2@gmail.com"
+    - git clone --single-branch --branch main git@gitlab.com:daralholol/k8s-manifests.git
+    - cd k8s-manifests/diyarNajed/dev/web
+    - export REPO=$DOCKER_IMAGE_DEV:$CI_COMMIT_SHORT_SHA-dev
+    - chmod -R 777 ${PWD}
+    - docker run --rm -v ${PWD}:/workdir -e REPO=$REPO mikefarah/yq:4.12.2  e '.spec.template.spec.containers[0].image=env(REPO)' --inplace deployment.yml
+    - git commit -am "New version updated ${CI_COMMIT_SHORT_SHA}-dev" && git push origin main
+  tags:
+    - gitlab-org-docker
+  needs: ["build_image_dev"]
+  only:
+    refs:
+      - develop
+
+
+build_react_stage:
+  image: node:18
+  stage: build_stage
+  variables:
+    CI: "false"
+  script:
+    - npm install
+    - cat .env.stage> .env
+    - npm run build
+
+  artifacts:
+    paths:
+      - dist/
+  only:
+    - stage
+  tags:
+    - gitlab-org-docker
+
+build_image_stage:
+  stage: push_registry_stage
+  image: docker:24.0.6
+  services:
+    - docker:24.0.6-dind
+  variables:
+    DOCKER_HOST: tcp://docker:2375/
+    DOCKER_DRIVER: overlay2
+    DOCKER_TLS_CERTDIR: ""
+  before_script:
+    - echo -n $CI_JOB_TOKEN | docker login -u gitlab-ci-token --password-stdin $CI_REGISTRY
+  script:
+    - docker build  -f stage.Dockerfile --tag $DOCKER_IMAGE_TEST:$CI_COMMIT_SHORT_SHA-stage .
+    - docker push $DOCKER_IMAGE_TEST:$CI_COMMIT_SHORT_SHA-stage
+
+  only:
+    - stage
+  tags:
+    - gitlab-org-docker
+
+update_manifest_stage:
+  stage: update_manifests_stage
+  variables:
+    GIT_STRATEGY: none
+  retry: 2
+  image: docker:24.0.6
+  services:
+    - docker:24.0.6-dind
+  script:
+    # Add SSH key to root
+    - mkdir -p /root/.ssh
+    - cat "${GIT_SSH}" > /root/.ssh/id_rsa
+    - ssh-keyscan -H gitlab.com > /root/.ssh/known_hosts
+    - chmod 400 /root/.ssh/id_rsa
+    - apk add --no-cache git
+    - export GIT_SSH_COMMAND="ssh -i ~/.ssh/id_rsa"
+    - git config --global user.name "hatemBT"
+    - git config --global user.email "hatemtayeb2@gmail.com"
+    - git clone --single-branch --branch main git@gitlab.com:daralholol/k8s-manifests.git
+    - cd k8s-manifests/diyarNajed/stage/web
+    - export REPO=$DOCKER_IMAGE_DEV:$CI_COMMIT_SHORT_SHA-stage
+    - chmod -R 777 ${PWD}
+    - docker run --rm -v ${PWD}:/workdir -e REPO=$REPO mikefarah/yq:4.12.2  e '.spec.template.spec.containers[0].image=env(REPO)' --inplace deployment.yml
+    - git commit -am "New version updated ${CI_COMMIT_SHORT_SHA}-stage" && git push origin main
+  tags:
+    - gitlab-org-docker
+  needs: ["build_image_stage"]
+  only:
+    refs:
+      - stage
+
+build_react_prod:
+  image: node:18
+  stage: build_prod
+  variables:
+    CI: "false"
+  script:
+    - npm install
+    - cat .env.prod> .env
+    - npm run build
+
+  artifacts:
+    paths:
+      - dist/
+  only:
+    - prod
+  tags:
+    - gitlab-org-docker
+
+build_image_prod:
+  stage: push_registry_prod
+  image: docker:24.0.6
+  services:
+    - docker:24.0.6-dind
+  variables:
+    DOCKER_HOST: tcp://docker:2375/
+    DOCKER_DRIVER: overlay2
+    DOCKER_TLS_CERTDIR: ""
+  before_script:
+    - echo -n $CI_JOB_TOKEN | docker login -u gitlab-ci-token --password-stdin $CI_REGISTRY
+  script:
+    - docker build  -f prod.Dockerfile --tag $DOCKER_IMAGE_TEST:$CI_COMMIT_SHORT_SHA-prod .
+    - docker push $DOCKER_IMAGE_TEST:$CI_COMMIT_SHORT_SHA-prod
+
+  only:
+    - prod
+  tags:
+    - gitlab-org-docker
+
+update_manifest_prod:
+  stage: update_manifests_prod
+  variables:
+    GIT_STRATEGY: none
+  retry: 2
+  image: docker:24.0.6
+  services:
+    - docker:24.0.6-dind
+  script:
+    # Add SSH key to root
+    - mkdir -p /root/.ssh
+    - cat "${GIT_SSH}" > /root/.ssh/id_rsa
+    - ssh-keyscan -H gitlab.com > /root/.ssh/known_hosts
+    - chmod 400 /root/.ssh/id_rsa
+    - apk add --no-cache git
+    - export GIT_SSH_COMMAND="ssh -i ~/.ssh/id_rsa"
+    - git config --global user.name "hatemBT"
+    - git config --global user.email "hatemtayeb2@gmail.com"
+    - git clone --single-branch --branch main git@gitlab.com:daralholol/k8s-manifests.git
+    - cd k8s-manifests/diyarNajed/prod/web
+    - export REPO=$DOCKER_IMAGE_DEV:$CI_COMMIT_SHORT_SHA-prod
+    - chmod -R 777 ${PWD}
+    - docker run --rm -v ${PWD}:/workdir -e REPO=$REPO mikefarah/yq:4.12.2  e '.spec.template.spec.containers[0].image=env(REPO)' --inplace deployment.yml
+    - git commit -am "New version updated ${CI_COMMIT_SHORT_SHA}-prod" && git push origin main
+  tags:
+    - gitlab-org-docker
+  needs: ["build_image_prod"]
+  only:
+    refs:
+      - prod

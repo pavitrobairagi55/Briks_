@@ -1,0 +1,36 @@
+.container {
+  height: 120px;
+  max-width: 200px;
+  border-radius: 30px;
+  width: 18%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: white;
+  box-shadow: 0 2px 1px -1px rgba(0, 0, 0, 0.2), 0 1px 1px 0 rgba(0, 0, 0, 0.14), 0 1px 3px 0 rgba(0, 0, 0, 0.12);
+  margin-bottom: 6px;
+}
+
+.body {
+  display: flex;
+  justify-content: space-between;
+}
+
+.container:hover {
+  background-color: #1c2a4c;
+  color: white;
+  box-shadow: none;
+}
+@media screen and (max-width: 991px) {
+  .container {
+    max-width: 450px;
+    background: rgba(250, 250, 250, 0.8);
+    width: 45%;
+  }
+}
+@media screen and (max-width: 600px) {
+  .container {
+    width: 100%;
+  }
+}
